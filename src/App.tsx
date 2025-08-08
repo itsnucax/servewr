@@ -4,6 +4,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { AppProvider } from './contexts/AppContext';
 import Layout from './components/Layout/Layout';
 import Login from './pages/Auth/Login';
+import Register from './pages/Auth/Register';
 import Dashboard from './pages/Dashboard/Dashboard';
 import Services from './pages/Services/Services';
 import Orders from './pages/Orders/Orders';
@@ -27,6 +28,7 @@ function App() {
           <div className="min-h-screen bg-gray-900">
             <Routes>
               <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
               <Route path="/" element={<Layout />}>
                 <Route index element={<UserDashboard />} />
                 {/* Admin/Reseller Routes */}
