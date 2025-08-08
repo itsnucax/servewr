@@ -1,4 +1,20 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  onAuthStateChanged,
+  signOut,
+} from 'firebase/auth';
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  doc,
+  getDoc,
+  setDoc,
+} from 'firebase/firestore';
+import { auth, db } from '../firebase';
 
 interface User {
   id: string;
@@ -13,6 +29,7 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   login: (username: string, password: string) => Promise<boolean>;
+  register: (username: string, email: string, password: string) => Promise<boolean>;
   logout: () => void;
   isAuthenticated: boolean;
 }
@@ -32,48 +49,76 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate checking for existing session
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
-    setIsLoading(false);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        const docRef = doc(db, 'users', firebaseUser.uid);
+        const userSnap = await getDoc(docRef);
+        if (userSnap.exists()) {
+          const data = userSnap.data() as Omit<User, 'id'>;
+          setUser({ id: firebaseUser.uid, ...data });
+        }
+      } else {
+        setUser(null);
+      }
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const login = async (username: string, password: string): Promise<boolean> => {
     setIsLoading(true);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    if (username === 'admin' && password === 'admin') {
-      const userData: User = {
-        id: '1',
-        username: 'admin',
-        email: 'admin@example.com',
-        role: 'admin',
-        balance: 1500.50,
-      };
-      
-      setUser(userData);
-      localStorage.setItem('user', JSON.stringify(userData));
+    try {
+      const q = query(collection(db, 'users'), where('username', '==', username));
+      const querySnapshot = await getDocs(q);
+      if (querySnapshot.empty) {
+        setIsLoading(false);
+        return false;
+      }
+      const userDoc = querySnapshot.docs[0];
+      const { email } = userDoc.data() as { email: string };
+      await signInWithEmailAndPassword(auth, email, password);
       setIsLoading(false);
       return true;
+    } catch {
+      setIsLoading(false);
+      return false;
     }
-    
-    setIsLoading(false);
-    return false;
+  };
+
+  const register = async (
+    username: string,
+    email: string,
+    password: string
+  ): Promise<boolean> => {
+    setIsLoading(true);
+    try {
+      const credential = await createUserWithEmailAndPassword(auth, email, password);
+      const role = username === import.meta.env.VITE_ADMIN_USERNAME ? 'admin' : 'user';
+      await setDoc(doc(db, 'users', credential.user.uid), {
+        username,
+        email,
+        role,
+        balance: 0,
+      });
+      setIsLoading(false);
+      return true;
+    } catch {
+      setIsLoading(false);
+      return false;
+    }
   };
 
   const logout = () => {
+    signOut(auth);
     setUser(null);
-    localStorage.removeItem('user');
   };
 
   const value = {
     user,
     isLoading,
     login,
+    register,
     logout,
     isAuthenticated: !!user,
   };

@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { Eye, EyeOff, LogIn } from 'lucide-react';
+import { Eye, EyeOff, UserPlus } from 'lucide-react';
 
-const Login: React.FC = () => {
+const Register: React.FC = () => {
   const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const { login, isAuthenticated, isLoading } = useAuth();
+  const { register, isAuthenticated, isLoading } = useAuth();
 
   if (isAuthenticated) {
     return <Navigate to="/" replace />;
@@ -17,10 +18,9 @@ const Login: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
-    const success = await login(username, password);
+    const success = await register(username, email, password);
     if (!success) {
-      setError('Invalid username or password');
+      setError('Failed to create account');
     }
   };
 
@@ -28,10 +28,10 @@ const Login: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
       <div className="max-w-md w-full space-y-8 p-8">
         <div className="text-center">
-          <h2 className="text-4xl font-bold text-white mb-2">DHRU FUSION</h2>
-          <p className="text-gray-400">Sign in to your account</p>
+          <h2 className="text-4xl font-bold text-white mb-2">Create Account</h2>
+          <p className="text-gray-400">Register to access the platform</p>
         </div>
-        
+
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
@@ -46,10 +46,26 @@ const Login: React.FC = () => {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full px-3 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Enter your username"
+                placeholder="Choose a username"
               />
             </div>
-            
+
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+                Email
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-3 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Enter your email"
+              />
+            </div>
+
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
                 Password
@@ -63,7 +79,7 @@ const Login: React.FC = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full px-3 py-3 pr-10 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter your password"
+                  placeholder="Create a password"
                 />
                 <button
                   type="button"
@@ -91,15 +107,14 @@ const Login: React.FC = () => {
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
             ) : (
               <>
-                <LogIn size={16} className="mr-2" />
-                Sign In
+                <UserPlus size={16} className="mr-2" />
+                Register
               </>
             )}
           </button>
-          
+
           <div className="text-center text-sm text-gray-400">
-            Don't have an account?{' '}
-            <Link to="/register" className="text-blue-400 hover:text-blue-300">Register</Link>
+            Already have an account? <Link to="/login" className="text-blue-400 hover:text-blue-300">Sign in</Link>
           </div>
         </form>
       </div>
@@ -107,4 +122,4 @@ const Login: React.FC = () => {
   );
 };
 
-export default Login;
+export default Register;
